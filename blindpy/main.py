@@ -83,8 +83,9 @@ def get_video_info(video):
 @click.option("--output_video_path", type=str, default="/tmp/blindpy.mp4")
 @click.option("--style", type=click.Choice(["rect", "image"]), default="rect")
 @click.option("--draw_image_path", type=str, default="")
+@click.option("--targets", type=list, default=[0, 1, 2, 3])
 @click.option("--show-once", is_flag=True, default=False)
-def seal(video_path, result_path, output_video_path, style, draw_image_path, show_once):
+def seal(video_path, result_path, output_video_path, style, draw_image_path, targets, show_once):
     video = cv2.VideoCapture(video_path)
     info = get_video_info(video)
     print(f"size: ({info.width}, {info.height}), fps: {info.fps:1.2f}, num: {info.frame_num}")
@@ -113,6 +114,7 @@ def seal(video_path, result_path, output_video_path, style, draw_image_path, sho
                     style,
                     img,
                     result,
+                    targets,
                     {
                         "draw_image": draw_image_path,
                     })

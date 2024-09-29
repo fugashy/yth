@@ -1,8 +1,10 @@
 import cv2
 
 
-def draw_rect(img, result, pargs):
+def draw_rect(img, result, targets, pargs):
     for r in result.itertuples():
+        if r.cls not in targets:
+            continue
         p1 = (round(r.x1), round(r.y1))
         p2 = (round(r.x2), round(r.y2))
         color = (255, 0, 0)
@@ -10,7 +12,7 @@ def draw_rect(img, result, pargs):
     return img
 
 
-def draw_image(img, result, pargs):
+def draw_image(img, result, targets, pargs):
     # アルファ値込みで使いたい
     overlay_img = cv2.imread(pargs["draw_image"], cv2.IMREAD_UNCHANGED)
 
@@ -21,6 +23,8 @@ def draw_image(img, result, pargs):
     rs = rs.sort_values(by="largeness", ascending=True)
 
     for r in rs.itertuples():
+        if r.cls not in targets:
+            continue
         # 描画領域の左上と右下座標
         rect_width = round(r.x2) - round(r.x1)
         rect_height = round(r.y2) - round(r.y1)
@@ -44,15 +48,12 @@ def draw_image(img, result, pargs):
             # 合成結果を元の背景画像に適用
             img[round(r.y1):round(r.y2), round(r.x1):round(r.x2)] = background_region
 
-
-
-                # img[round(r.y1):round(r.y2), round(r.x1):round(r.x2)] = resized_overlay
     return img
 
 
-def call(style, img, result, pargs):
+def call(style, img, result, targets, pargs):
     function_by_style = {
             "rect": draw_rect,
             "image": draw_image,
             }
-    return function_by_style[style](img, result, pargs)
+    return function_by_style[style](img, result, targets, pargs)
