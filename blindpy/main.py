@@ -9,6 +9,7 @@ import cv2
 import moviepy.editor as mp
 from tqdm import tqdm
 
+from .results import results
 from . import draw_utils
 
 
@@ -85,7 +86,8 @@ def get_video_info(video):
 @click.option("--draw_image_path", type=str, default="")
 @click.option("--targets", type=list, default=[0, 1, 2, 3])
 @click.option("--show-once", is_flag=True, default=False)
-def seal(video_path, result_path, output_video_path, style, draw_image_path, targets, show_once):
+@click.option("--with-audio", is_flag=True, default=True)
+def seal(video_path, result_path, output_video_path, style, draw_image_path, targets, show_once, with_audio):
     video = cv2.VideoCapture(video_path)
     info = get_video_info(video)
     print(f"size: ({info.width}, {info.height}), fps: {info.fps:1.2f}, num: {info.frame_num}")
@@ -131,18 +133,26 @@ def seal(video_path, result_path, output_video_path, style, draw_image_path, tar
 
     # 音声をつける
     print("try to set audio...")
-    clip_input = mp.VideoFileClip(video_path)
-    clip_input.audio.write_audiofile("/tmp/audio.mp3")
-    clip = mp.VideoFileClip(tmp_video_path)
-    audio = mp.AudioFileClip("/tmp/audio.mp3")
-    clip = clip.set_audio(audio)
-    clip.write_videofile(
-            output_video_path,codec='libx264',
-            audio_codec='aac',
-            temp_audiofile='temp-audio.m4a',
-            remove_temp=True)
+    if with_audio:
+        clip_input = mp.VideoFileClip(video_path)
+        clip_input.audio.write_audiofile("/tmp/audio.mp3")
+        clip = mp.VideoFileClip(tmp_video_path)
+        audio = mp.AudioFileClip("/tmp/audio.mp3")
+        clip = clip.set_audio(audio)
+        clip.write_videofile(
+                output_video_path,codec='libx264',
+                audio_codec='aac',
+                temp_audiofile='temp-audio.m4a',
+                remove_temp=True)
+    else:
+        clip = mp.VideoFileClip(tmp_video_path)
+        clip.write_videofile(
+                output_video_path,codec='libx264',
+                remove_temp=True)
+
 
 
 
 def entry_point():
+    blindpy.add_command(results)
     blindpy()
