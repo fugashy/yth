@@ -1,5 +1,4 @@
 import click
-import cv2
 
 from .yolo import yolo
 from .results import results
