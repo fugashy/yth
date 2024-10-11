@@ -1,63 +1,18 @@
-from collections import namedtuple
 from dataclasses import dataclass
 
 import click
-from ultralytics import YOLO
-import torch
-import pandas as pd
 import cv2
 import moviepy.editor as mp
 from tqdm import tqdm
 
+from .yolo import yolo
 from .results import results
 from . import draw_utils
-
-
-
-_COLUMN_NAMES = [
-    "frame_id", "tracking_id", "cls", "conf", "x1", "y1", "x2", "y2"]
 
 
 @click.group()
 def blindpy():
     pass
-
-
-@blindpy.command()
-@click.argument("input_filepath", type=str)
-@click.option("--output_filepath", type=str, default="/tmp/blindpy-yolo-results.txt")
-@click.option("--model-name", type=str, default="yolov8s.pt")
-def yolo(
-        input_filepath,
-        output_filepath,
-        model_name):
-    if not torch.backends.mps.is_available():
-        print("MPS is not available...")
-        return
-
-    model = YOLO(model_name)
-
-    results = model(source=input_filepath, show=False, save=False, device="mps")
-    tuples = list()
-    Bbx = namedtuple("bbx", _COLUMN_NAMES)
-    bbxs = list()
-    for i, r in enumerate(results):
-        frame_id = i
-        for bbx in r.boxes:
-            tracking_id = bbx.id
-            cls = int(bbx.cls)
-            conf = float(bbx.conf)
-            xyxy = bbx.xyxy
-            x1 = float(xyxy[0,0])
-            y1 = float(xyxy[0,1])
-            x2 = float(xyxy[0,2])
-            y2 = float(xyxy[0,3])
-
-            bbxs.append(Bbx(frame_id, tracking_id, cls, conf, x1, y1, x2, y2))
-
-    df = pd.DataFrame(bbxs)
-    df.to_csv(output_filepath)
-    print(f"output result to {output_filepath}")
 
 
 @dataclass
@@ -75,7 +30,6 @@ def get_video_info(video):
     frame_num = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
 
     return VideoInfo(width, height, fps, frame_num)
-
 
 
 @blindpy.command()
@@ -152,7 +106,13 @@ def seal(video_path, result_path, output_video_path, style, draw_image_path, tar
 
 
 
-
 def entry_point():
-    blindpy.add_command(results)
+    commands = [
+            yolo,
+            results,
+            ]
+    [
+        blindpy.add_command(c)
+        for c in commands
+        ]
     blindpy()
