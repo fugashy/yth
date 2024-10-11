@@ -193,6 +193,39 @@ class GaussianDrawer(Drawer):
         return img
 
 
+class MosaicDrawer(Drawer):
+    def __init__(
+            self,
+            param: Drawer.Param,
+            scale):
+        super().__init__(param)
+        self._scale = scale
+
+
+    def _draw_impl(self, img, results):
+        for r in results.itertuples():
+            if r.cls not in self.p.targets:
+                continue
+            x = round((r.x1 + r.x2) / 2.)
+            y = round((r.y1 + r.y2) / 2.)
+            hw = round((r.x2 - r.x1) / 2.)
+            hh = round((r.y2 - r.y1) / 2.)
+
+            roi = img[y-hh:y+hh, x-hw:x+hw]
+
+            w = roi.shape[1]
+            h = roi.shape[0]
+            roi = cv2.resize(
+                    roi,
+                    (int(w / self._scale), int(h / self._scale)))
+            roi = cv2.resize(
+                    roi,
+                    (w, h),
+                    interpolation=cv2.INTER_NEAREST)
+            img[y-hh:y+hh, x-hw:x+hw] = roi
+        return img
+
+
 @click.group()
 def blind():
     pass
@@ -281,3 +314,31 @@ def blur(
             kernel_size)
     drawer.run()
 
+
+@blind.command()
+@click.argument("video_path", type=str)
+@click.option("--result_path", type=str, default="/tmp/blindpy-yolo-results.txt")
+@click.option("--output_video_path", type=str, default="/tmp/blindpy.mp4")
+@click.option("--targets", type=list, default=[0, 1, 2, 3])
+@click.option("--show-once", is_flag=True, default=False)
+@click.option("--with-audio", is_flag=True, default=True)
+@click.option("--scale", type=int, default=50)
+def mosaic(
+        video_path,
+        result_path,
+        output_video_path,
+        targets,
+        show_once,
+        with_audio,
+        scale):
+    drawer = MosaicDrawer(
+            Drawer.Param(
+                video_path=video_path,
+                result_path=result_path,
+                output_video_path=output_video_path,
+                targets=targets,
+                show_once=show_once,
+                with_audio=with_audio,
+                tmp_video_path="/tmp/tmp.mp4"),
+            scale)
+    drawer.run()
