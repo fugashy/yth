@@ -1,9 +1,0 @@
-click
-torch
-ultralytics
-pandas
-opencv-python
-moviepy
-tqdm
-ffmpeg-python
-openai-whisper
