@@ -3,6 +3,7 @@ import click
 from .yolo import yolo
 from .results import results
 from .blind import blind
+from .whisper import whisper
 
 
 @click.group()
@@ -15,6 +16,7 @@ def entry_point():
             yolo,
             results,
             blind,
+            whisper,
             ]
     [
         blindpy.add_command(c)

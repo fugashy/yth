@@ -1,0 +1,2 @@
+[console_scripts]
+yth = yth.main:entry_point
