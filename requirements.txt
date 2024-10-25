@@ -7,3 +7,4 @@ moviepy
 tqdm
 ffmpeg-python
 openai-whisper
+pydub
