@@ -121,3 +121,45 @@ def filter_silence(
 
     # 一時ファイルの削除
     os.remove(audio_path)
+
+
+def _get_video_resolution(video_path):
+    """動画ファイルの幅と高さを取得する関数"""
+    probe = ffmpeg.probe(video_path)
+    video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
+    width = int(video_stream['width'])
+    height = int(video_stream['height'])
+    return width, height
+
+
+@edit.command()
+@click.argument("input_video_path", type=str)
+@click.option("--output-video-path", type=str, default="/tmp/short.mp4")
+def to_short(
+        input_video_path,
+        output_video_path):
+    # 入力動画の解像度を取得
+    width, height = _get_video_resolution(input_video_path)
+
+    # 9:16のアスペクト比でトリミング幅を計算
+    target_width = int(height * 9 / 16)
+
+    # トリミング開始位置（中央部分を切り抜く）
+    x_offset = (width - target_width) // 2 if width > target_width else 0
+    y_offset = 0  # 高さはそのまま
+
+    # 映像と音声をそれぞれ処理し、結合して出力
+    video = (
+        ffmpeg
+        .input(input_video_path)
+        .filter('crop', target_width, height, x_offset, y_offset)  # 映像をトリミング
+    )
+
+    audio = ffmpeg.input(input_video_path).audio  # 音声を取得
+
+    # 映像と音声を結合して出力
+    (
+        ffmpeg
+        .output(video, audio, output_video_path, vcodec='libx264', acodec='aac', strict='experimental')  # 音声を結合
+        .run()
+    )
