@@ -8,3 +8,4 @@ tqdm
 ffmpeg-python
 openai-whisper
 pydub
+flask

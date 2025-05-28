@@ -5,6 +5,7 @@ from .results import results
 from .blind import blind
 from .whisper import whisper
 from .edit import edit
+from .servers import servers
 
 
 @click.group()
@@ -19,6 +20,7 @@ def entry_point():
             blind,
             whisper,
             edit,
+            servers,
             ]
     [
         blindpy.add_command(c)
