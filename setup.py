@@ -8,6 +8,9 @@ setup(
     version='0.0.0',
     packages=find_packages(),
     install_requires=requirements_from_file('requirements.txt'),
+    package_data={
+        "yth": ["templates/*.html"]
+    },
     entry_points={
         "console_scripts": [
             "yth=yth.main:entry_point",

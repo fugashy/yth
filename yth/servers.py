@@ -1,6 +1,7 @@
 from flask import Flask, render_template, Response
 import click
 import cv2
+import numpy as np
 
 
 
@@ -18,14 +19,36 @@ def servers(ctx, host, port):
 
 def _fugashy(camera_id):
     cap = cv2.VideoCapture(camera_id)
+    kernel = np.ones((3, 3), np.uint8)
+
 
     while True:
         ret, frame = cap.read()
         if not ret:
             continue
 
-        frame = cv2.cvtColor(cv2.COLOR_BGR2GRAY)
-        _, buffer = cv2.imencode(".jpg", frame)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        frame = cv2.GaussianBlur(frame, (5, 5), 0)
+        frame = cv2.Canny(frame, threshold1=50, threshold2=150)
+
+        core = cv2.dilate(frame, kernel, iterations=4)
+        out = cv2.dilate(core, kernel, iterations=4)
+
+        outline = cv2.subtract(out, core)
+
+        h, w = out.shape
+        rgba = np.zeros((h, w, 4), dtype=np.uint8)
+
+        rgba[out > 0] = (0, 0, 0, 255)
+        rgba[core > 0] = (255, 255, 255, 255)
+
+#       alpha = np.zeros_like(frame)
+#       alpha[frame > 0] = 255
+
+#       frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+#       frame = cv2.merge([frame, alpha])
+
+        _, buffer = cv2.imencode(".png", rgba)
         frame_bytes = buffer.tobytes()
         yield (
             b'--frame\r\n'
@@ -47,6 +70,6 @@ def fugashy(ctx, camera_id):
     @app.route("/video_feed")
     def video_feed():
         return Response(
-                fugashy(camera_id),
+                _fugashy(camera_id),
                 mimetype='multipart/x-mixed-replace; boundary=frame')
     app.run(host=ctx.obj["host"], port=ctx.obj["port"])
